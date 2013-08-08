@@ -64,6 +64,7 @@ function _webform_theme_submissionref() {
  */
 function _webform_edit_submissionref($component) {
   // Unserialize and set default values, if they have been set previsouly
+  $default_nid = $default_components = $default_filters = $default_options = NULL;
   if (!empty($component['value'])) {
     list($default_nid, $default_components, $default_filters, $default_options) = unserialize($component['value']);
   }
