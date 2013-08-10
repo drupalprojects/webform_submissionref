@@ -282,6 +282,8 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
     '#options' => $options,
     '#required' => $component['mandatory'],
     '#weight' => $component['weight'],
+    '#theme_wrappers' => array('webform_element'),
+    '#pre_render' => array(), // Needed to disable double-wrapping
     '#translatable' => array('title', 'description'),
   );
 
