@@ -5,6 +5,9 @@
  * Webform submission reference module.
  */
 
+/**
+ * Implements hook_webform_component_info().
+ */
 function webform_submissionref_webform_component_info() {
   $components = array();
   $components['submissionref'] = array(
@@ -29,7 +32,7 @@ function webform_submissionref_webform_component_info() {
 
 /**
  * Implements _webform_defaults_component().
- */ 
+ */
 function _webform_defaults_submissionref() {
   return array(
     'name' => '',
@@ -63,20 +66,20 @@ function _webform_theme_submissionref() {
  * Implements _webform_edit_component().
  */
 function _webform_edit_submissionref($component) {
-  // Unserialize and set default values, if they have been set previsouly
+  // Unserialize and set default values, if they have been set previsouly.
   $default_nid = $default_components = $default_filters = $default_options = NULL;
   if (!empty($component['value'])) {
     list($default_nid, $default_components, $default_filters, $default_options) = unserialize($component['value']);
   }
 
-  // Prepare component edit form
+  // Prepare component edit form.
   $form = array();
   $form['value'] = array(
     '#type' => 'hidden',
     '#default_value' => !empty($component['value']) ? $component['value'] : '',
   );
 
-  // Build options from webform nodes
+  // Build options from webform nodes.
   $nodes = db_select('node', 'n')
     ->fields('n', array('nid', 'title'))
     ->condition('type', 'webform', '=')
@@ -86,8 +89,8 @@ function _webform_edit_submissionref($component) {
   foreach ($nodes as $node) {
     $options[$node->nid] = $node->title . ' [nid: ' . $node->nid . ']';
   }
-  
-  // Display nid field
+
+  // Display nid field.
   $form['submissionref'] = array(
     '#type' => 'fieldset',
     '#title' => t('Webform submission reference'),
@@ -100,15 +103,15 @@ function _webform_edit_submissionref($component) {
     '#default_value' => isset($default_nid) ? $default_nid : '',
     '#options' => $options,
   );
-  
-  // Display components table + filters
+ 
+  // Display components table + filters.
   foreach ($options as $nid => $title) {
     $form['submissionref']['node_' . $nid] = array(
       '#prefix' => "<div class=\"submissionref-components\" id=\"submissionref-components-$nid\">",
       '#suffix' => '</div>',
       'components' => array(
         '#theme' => array('webform_submissionref_components_table'),
-        // nid will be used in theme_webform_submissionref_components_table().
+        // Nid will be used in theme_webform_submissionref_components_table().
         'nid' => array(
           '#type' => 'hidden',
           '#value' => $nid,
@@ -123,7 +126,7 @@ function _webform_edit_submissionref($component) {
       ),
     );
   }
-  // Display options
+  // Display options.
   $form['submissionref']['options'] = array(
     '#type' => 'fieldset',
     '#title' => t('Options'),
@@ -143,7 +146,7 @@ function _webform_edit_submissionref($component) {
     ),
   );
 
-  // Add JS to display components depending on the selected node
+  // Add JS to display components depending on the selected node.
   $js = <<<EOT
   jQuery(document).ready(function($) {
     $('select[name="submissionref[nid]"]').change(function() {
@@ -155,7 +158,7 @@ function _webform_edit_submissionref($component) {
 EOT;
   drupal_add_js($js, 'inline');
 
-  // Fill up components table + filters
+  // Fill up components table + filters.
   $query = new EntityFieldQuery();
   $entities = $query->entityCondition('entity_type', 'node')
     ->propertyCondition('type', 'webform')
@@ -169,13 +172,14 @@ EOT;
     foreach ($node->webform['components'] as $component) {
       $nid = $component['nid'];
       $cid = $component['cid'];
-      // If this component belongs to the webform selected previously, then set its default values
-      $default_display = (($nid == $default_nid) && array_key_exists($cid, $default_components))
-        ? $default_components[$cid]['display']
-        : FALSE;
-      $default_weight = (($nid == $default_nid) && array_key_exists($cid, $default_components))
-        ? $default_components[$cid]['weight']
-        : 0;
+      // If component belongs to default webform, then set its default values.
+      if (($nid == $default_nid) && array_key_exists($cid, $default_components)) {
+        $default_display = $default_components[$cid]['display'];
+        $default_weight  = $default_components[$cid]['weight'];
+      } else {
+        $default_display = FALSE;
+        $default_weight  = 0;
+      }
       $form['submissionref']['node_' . $nid]['components'][$cid] = array(
         '#weight' => $default_weight,
         'name' => array(
@@ -207,12 +211,12 @@ EOT;
 }
 
 /**
- * Validate that limit entered is a positive integer
+ * Validate that limit entered is a positive integer.
  */
 function webform_submissionref_limit_validate($element, &$form_state) {
   $limit = $element['#value'];
-  // $limit is a string - is_numeric makes sure it actually contains a number
-  if (!is_numeric($limit) || !is_integer((int) $limit) || ($limit < 0)) {
+  // $limit is a string - is_numeric makes sure it actually contains a number.
+  if (!is_numeric($limit) || !is_int((int) $limit) || ($limit < 0)) {
     form_error($element, t('The limit must be a positive integer.'));
   }
 }
@@ -221,20 +225,20 @@ function webform_submissionref_limit_validate($element, &$form_state) {
 /**
  * Implements _webform_render_component().
  *
- * Displayed when viewing the node e.g. node/1
+ * Displayed when viewing the node e.g. node/1.
  */
 function _webform_render_submissionref($component, $value = NULL, $filter = TRUE) {
-  // Get component values
+  // Get component values.
   list($nid, $components, $filters_set, $options_set) = unserialize($component['value']);
 
-  // Get submitted data
+  // Get submitted data.
   $submissions = webform_get_submissions($nid);
   
-  // Apply filters
+  // Apply filters.
   foreach ($submissions as $sid => $submission) {
     foreach ($filters_set as $cid => $filter_value) {
-      // If filter component does not exist, remove submission
-      // If filter component exists but values do not match, remove submission
+      // If filter component does not exist, remove submission.
+      // If filter component exists but values do not match, remove submission.
       if (!isset($submission->data[$cid])
       || (isset($submission->data[$cid]) && $submission->data[$cid][0] != $filter_value)) {
         unset($submissions[$sid]);
@@ -242,7 +246,7 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
     }
   }
 
-  // Apply options
+  // Apply options.
   if (isset($options_set['randomize'])) {
     shuffle($submissions);
   }
@@ -250,15 +254,15 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
     $submissions = array_slice($submissions, 0, $options_set['limit']);
   }
 
-  // Build options from submitted data
+  // Build options from submitted data.
   $options = array();
   foreach ($submissions as $submission) {
     $options[$submission->sid] = array();
     foreach ($components as $cid => $c) {
-      // Make sure the component must be display and still exists
+      // Make sure the component must be display and still exists.
       if ($c['display'] && isset($submission->data[$cid])) {
         $markup = $submission->data[$cid][0];
-        // Define hook_webform_submissionref_component_alter()
+        // Define hook_webform_submissionref_component_alter().
         drupal_alter('webform_submissionref_component', $markup, $submission, $cid);
         $element = array(
           '#markup' => $markup,
@@ -272,7 +276,7 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
     $options[$submission->sid] = drupal_render($options[$submission->sid]);
   }
 
-  // Build form element
+  // Build form element.
   $element = array(
     '#type' => 'radios',
     '#title' => $filter ? _webform_filter_xss($component['name']) : $component['name'],
@@ -283,7 +287,7 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
     '#required' => $component['mandatory'],
     '#weight' => $component['weight'],
     '#theme_wrappers' => array('webform_element'),
-    '#pre_render' => array(), // Needed to disable double-wrapping
+    '#pre_render' => array(), // Needed to disable double-wrapping.
     '#translatable' => array('title', 'description'),
   );
 
@@ -293,10 +297,10 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
 /**
  * Implements _webform_display_component().
  *
- * Displayed when viewing a submission e.g. node/1/submission/1
+ * Displayed when viewing a submission e.g. node/1/submission/1.
  */
 function _webform_display_submissionref($component, $value, $format = 'html') {
-  // Get sid selected by user + nid + cids to display
+  // Get sid selected by user + nid + cids to display.
   $sid = $value[0];
   list($nid, $components, $filters, $options) = unserialize($component['value']);
   $cids_display = array();
@@ -306,7 +310,7 @@ function _webform_display_submissionref($component, $value, $format = 'html') {
     }
   }
 
-  // Get submission data
+  // Get submission data.
   $submitted_fields = db_select('webform_submitted_data', 'd')
     ->fields('d', array('data', 'cid'))
     ->condition('sid', $sid, '=')
@@ -314,7 +318,7 @@ function _webform_display_submissionref($component, $value, $format = 'html') {
     ->condition('cid', $cids_display, 'IN')
     ->execute();
 
-  // Build displayed value
+  // Build displayed value.
   $displayed_value = array();
   foreach ($submitted_fields as $field) {
     $displayed_value[] = array(
@@ -326,7 +330,7 @@ function _webform_display_submissionref($component, $value, $format = 'html') {
   }
   $displayed_value = drupal_render($displayed_value);
 
-  // Build form element
+  // Build form element.
   $element = array(
     '#title' => $component['name'],
     '#weight' => $component['weight'],
@@ -352,7 +356,7 @@ function theme_webform_display_submissionref($variables) {
 /**
  * Implements _webform_table_component().
  *
- * Displayed when viewing the results table i.e. node/1/webform-results/table
+ * Displayed when viewing the results table i.e. node/1/webform-results/table.
  */
 function _webform_table_submissionref($component, $value) {
   if (empty($value[0])) {
@@ -392,22 +396,22 @@ function _webform_csv_data_submissionref($component, $export_options, $value) {
  */
 function webform_submissionref_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'webform_component_edit_form' && isset($form['submissionref'])) {
-    // Add our custom submit function
-    // We use array_unshift since our function must run before the one provided
-    // by webform (webform_component_edit_form_submit)
+    // Add our custom submit function.
+    // Use array_unshift - our function must run before webform's.
     array_unshift($form['#submit'], 'webform_submissionref_edit_form_submit');
     $form['#validate'][] = 'webform_submissionref_edit_form_validate';
   }
 }
 
 /**
- * Validation handler
- * At least 1 component should be selected
+ * Validation handler.
+ *
+ * At least 1 component should be selected.
  */
 function webform_submissionref_edit_form_validate($form, $form_state) {
   $element_selected = FALSE;
   $nid = $form_state['values']['submissionref']['nid'];
-  // The verification applies only to components that belong to the selected node
+  // The verification applies only to components that belong to the selected node.
   $components = $form_state['values']['submissionref']['node_' . $nid]['components'];
   foreach ($components as $component) {
     if ($component['display']) {
@@ -422,16 +426,17 @@ function webform_submissionref_edit_form_validate($form, $form_state) {
 
 
 /**
- * Submit handler
- * Fill up component value by serializing user submitted data
+ * Submit handler.
+ *
+ * Fill up component value by serializing user submitted data.
  */
 function webform_submissionref_edit_form_submit($form, &$form_state) {
-  // Get webform nid
+  // Get webform nid.
   $nid = $form_state['values']['submissionref']['nid'];
-  // Get components (remove hidden field nid)
+  // Get components (remove hidden field nid).
   $components = $form_state['values']['submissionref']['node_' . $nid]['components'];
   unset($components['nid']);
-  // Get filters set by the user
+  // Get filters set by the user.
   $filters_set = array();
   if (isset($form_state['values']['submissionref']['node_' . $nid]['filters'])) {
     $filters = $form_state['values']['submissionref']['node_' . $nid]['filters'];
@@ -441,16 +446,17 @@ function webform_submissionref_edit_form_submit($form, &$form_state) {
       }
     }
   }
-  // Get options set by the user
+  // Get options set by the user.
   $options = $form_state['values']['submissionref']['options'];
   foreach ($options as $key => $value) {
     if (empty($value)) {
       unset($options[$key]);
     }
   }
-  // Serialize values and store it in component value
-  // The order of the values matters - they will be retrieved with list()
-  $form_state['values']['value'] = serialize(array($nid, $components, $filters_set, $options));
+  // Serialize values and store it in component value.
+  // The order of the values matters - they will be retrieved with list().
+  $value = array($nid, $components, $filters_set, $options);
+  $form_state['values']['value'] = serialize($value);
 }
 
 /**
@@ -465,8 +471,9 @@ function webform_submissionref_theme($existing, $type, $theme, $path) {
 }
 
 /**
- * Theme function for component edit form
- * Creates the tabledrag
+ * Theme function for component edit form.
+ *
+ * Creates the tabledrag.
  */
 function theme_webform_submissionref_components_table($variables) {
   $element = $variables['element'];
@@ -475,11 +482,11 @@ function theme_webform_submissionref_components_table($variables) {
   $weight_class = 'submissionref-components-weight';
 
   $header = array(t('Component'), t('Display'), t('Weight'));
-  
+ 
   $rows = array();
   foreach (element_children($element, TRUE) as $key) {
-    // We don't want to process hidden key 'nid'
-    // -> make sure we process only numeric keys
+    // We don't want to process hidden key 'nid'.
+    // -> make sure we process only numeric keys.
     if (!is_numeric($key)) {
       continue;
     }
@@ -491,7 +498,7 @@ function theme_webform_submissionref_components_table($variables) {
         drupal_render($element[$key]['display']),
         drupal_render($element[$key]['weight']),
       ),
-      'class' => array('draggable')
+      'class' => array('draggable'),
     );
   }
 
@@ -502,9 +509,8 @@ function theme_webform_submissionref_components_table($variables) {
     'rows' => $rows,
     'attributes' => array('id' => $table_id),
   ));
-  
+ 
   drupal_add_tabledrag($table_id, 'order', 'sibling', $weight_class);
 
   return $output;
 }
-
