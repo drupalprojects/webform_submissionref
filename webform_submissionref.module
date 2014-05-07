@@ -80,14 +80,18 @@ function _webform_edit_submissionref($component) {
   );
 
   // Build options from webform nodes.
-  $nodes = db_select('node', 'n')
-    ->fields('n', array('nid', 'title'))
-    ->condition('type', 'webform', '=')
-    ->orderBy('title')
+  $query = new EntityFieldQuery();
+  $query = $query
+    ->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'webform')
+    ->propertyOrderBy('title')
     ->execute();
+  $nodes = empty($query['node']) ? array() : entity_load('node', array_keys($query['node']));
   $options = array();
   foreach ($nodes as $node) {
-    $options[$node->nid] = $node->title . ' [nid: ' . $node->nid . ']';
+    if (node_access('update', $node)) {
+      $options[$node->nid] = $node->title . ' [nid: ' . $node->nid . ']';
+    }
   }
 
   // Display nid field.
@@ -103,7 +107,7 @@ function _webform_edit_submissionref($component) {
     '#default_value' => isset($default_nid) ? $default_nid : '',
     '#options' => $options,
   );
- 
+
   // Display components table + filters.
   foreach ($options as $nid => $title) {
     $form['submissionref']['node_' . $nid] = array(
@@ -256,24 +260,29 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
 
   // Build options from submitted data.
   $options = array();
+  $webform = node_load($nid);
+  $author = user_load($webform->uid);
   foreach ($submissions as $submission) {
-    $options[$submission->sid] = array();
-    foreach ($components as $cid => $c) {
-      // Make sure the component must be display and still exists.
-      if ($c['display'] && isset($submission->data[$cid])) {
-        $markup = $submission->data[$cid][0];
-        // Define hook_webform_submissionref_component_alter().
-        drupal_alter('webform_submissionref_component', $markup, $submission, $cid);
-        $element = array(
-          '#markup' => $markup,
-          '#weight' => $c['weight'],
-          '#prefix' => '<div>',
-          '#suffix' => '</div>',
-        );
-        $options[$submission->sid][$cid] = $element;
+    // Display submission only if author can access it.
+    if (webform_submission_access($webform, $submission, 'view', $author)) {
+      $options[$submission->sid] = array();
+      foreach ($components as $cid => $c) {
+        // Make sure the component must be display and still exists.
+        if ($c['display'] && isset($submission->data[$cid])) {
+          $markup = $submission->data[$cid][0];
+          // Define hook_webform_submissionref_component_alter().
+          drupal_alter('webform_submissionref_component', $markup, $submission, $cid);
+          $element = array(
+            '#markup' => $markup,
+            '#weight' => $c['weight'],
+            '#prefix' => '<div>',
+            '#suffix' => '</div>',
+          );
+          $options[$submission->sid][$cid] = $element;
+        }
       }
+      $options[$submission->sid] = drupal_render($options[$submission->sid]);
     }
-    $options[$submission->sid] = drupal_render($options[$submission->sid]);
   }
 
   // Build form element.
