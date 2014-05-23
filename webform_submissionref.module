@@ -42,6 +42,7 @@ function _webform_defaults_submissionref() {
     'value' => '',
     'mandatory' => 0,
     'extra' => array(
+      'aslist' => NULL,
       'width' => '',
       'disabled' => FALSE,
       'countries' => '',
@@ -66,6 +67,17 @@ function _webform_theme_submissionref() {
  * Implements _webform_edit_component().
  */
 function _webform_edit_submissionref($component) {
+  $form = array();
+
+  // Display extras.
+  $form['display']['aslist'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Listbox'),
+    '#default_value' => $component['extra']['aslist'],
+    '#description' => t('Check this option if you want the component to be displayed as a select list box instead of radio buttons or checkboxes.'),
+    '#parents' => array('extra', 'aslist'),
+  );
+
   // Unserialize and set default values, if they have been set previsouly.
   $default_nid = $default_components = $default_filters = $default_options = NULL;
   if (!empty($component['value'])) {
@@ -73,7 +85,6 @@ function _webform_edit_submissionref($component) {
   }
 
   // Prepare component edit form.
-  $form = array();
   $form['value'] = array(
     '#type' => 'hidden',
     '#default_value' => !empty($component['value']) ? $component['value'] : '',
@@ -266,28 +277,43 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
     // Display submission only if author can access it.
     if (webform_submission_access($webform, $submission, 'view', $author)) {
       $options[$submission->sid] = array();
-      foreach ($components as $cid => $c) {
-        // Make sure the component must be display and still exists.
-        if ($c['display'] && isset($submission->data[$cid])) {
-          $markup = $submission->data[$cid][0];
-          // Define hook_webform_submissionref_component_alter().
-          drupal_alter('webform_submissionref_component', $markup, $submission, $cid);
-          $element = array(
-            '#markup' => $markup,
-            '#weight' => $c['weight'],
-            '#prefix' => '<div>',
-            '#suffix' => '</div>',
-          );
-          $options[$submission->sid][$cid] = $element;
+      // 1. Radio/checkbox display: render option as HTML.
+      if (empty($component['extra']['aslist'])) {
+        foreach ($components as $cid => $c) {
+          // Make sure the component must be display and still exists.
+          if ($c['display'] && isset($submission->data[$cid])) {
+            $markup = $submission->data[$cid][0];
+            // Define hook_webform_submissionref_component_alter().
+            drupal_alter('webform_submissionref_component', $markup, $submission, $cid);
+            $element = array(
+              '#markup' => $markup,
+              '#weight' => $c['weight'],
+              '#prefix' => '<div>',
+              '#suffix' => '</div>',
+            );
+            $options[$submission->sid][$cid] = $element;
+          }
         }
+        $options[$submission->sid] = drupal_render($options[$submission->sid]);
       }
-      $options[$submission->sid] = drupal_render($options[$submission->sid]);
+      // 2. Listbox display: render option as raw, plain text.
+      else {
+        $option = '';
+        foreach ($components as $cid => $c) {
+          // Make sure the component must be display and still exists.
+          if ($c['display'] && isset($submission->data[$cid])) {
+            // Use space as an arbitraty glue. We can expose it to users in the future.
+            $option .= ' ' . $submission->data[$cid][0];
+          }
+        }
+        $options[$submission->sid] = $option;
+      }
     }
   }
 
   // Build form element.
   $element = array(
-    '#type' => 'radios',
+    '#type' => empty($component['extra']['aslist']) ? 'radios' : 'select',
     '#title' => $filter ? _webform_filter_xss($component['name']) : $component['name'],
     '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
     '#description' => isset($component['extra']['description']) ? $component['extra']['description'] : '',
