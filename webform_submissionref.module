@@ -309,35 +309,15 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
  * Displayed when viewing a submission e.g. node/1/submission/1.
  */
 function _webform_display_submissionref($component, $value, $format = 'html') {
-  // Get sid selected by user + nid + cids to display.
-  $sid = $value[0];
-  list($nid, $components, $filters, $options) = unserialize($component['value']);
-  $cids_display = array();
-  foreach ($components as $cid => $c) {
-    if ($c['display']) {
-      $cids_display[] = $cid;
-    }
+  // Generate markup.
+  if (empty($value[0])) {
+    $markup = '';
   }
-
-  // Get submission data.
-  $submitted_fields = db_select('webform_submitted_data', 'd')
-    ->fields('d', array('data', 'cid'))
-    ->condition('sid', $sid, '=')
-    ->condition('nid', $nid, '=')
-    ->condition('cid', $cids_display, 'IN')
-    ->execute();
-
-  // Build displayed value.
-  $displayed_value = array();
-  foreach ($submitted_fields as $field) {
-    $displayed_value[] = array(
-      '#markup' => $field->data,
-      '#weight' => $components[$field->cid]['weight'],
-      '#prefix' => '<div>',
-      '#suffix' => '</div>',
-    );
+  else {
+    $sid = $value[0];
+    list($nid, $components, $filters, $options) = unserialize($component['value']);
+    $markup = l(t('Submission #@sid', array('@sid' => $sid)), "node/$nid/submission/$sid");
   }
-  $displayed_value = drupal_render($displayed_value);
 
   // Build form element.
   $element = array(
@@ -346,7 +326,7 @@ function _webform_display_submissionref($component, $value, $format = 'html') {
     '#theme' => 'webform_display_submissionref',
     '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),
     '#format' => $format,
-    '#value' => $displayed_value,
+    '#value' => $markup,
     '#translatable' => array('title'),
   );
   return $element;
