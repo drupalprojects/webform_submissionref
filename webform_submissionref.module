@@ -315,6 +315,10 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
           }
         }
         $options[$submission->sid] = $option;
+        // Sort options for a better user experience. Unless user explicitely wants to randomize.
+        if (empty($options_set['randomize'])) {
+          natsort($options);
+        }
       }
     }
   }
