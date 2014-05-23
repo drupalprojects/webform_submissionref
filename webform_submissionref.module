@@ -43,6 +43,7 @@ function _webform_defaults_submissionref() {
     'mandatory' => 0,
     'extra' => array(
       'aslist' => NULL,
+      'multiple' => NULL,
       'width' => '',
       'disabled' => FALSE,
       'countries' => '',
@@ -70,6 +71,13 @@ function _webform_edit_submissionref($component) {
   $form = array();
 
   // Display extras.
+  $form['display']['multiple'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Multiple'),
+    '#default_value' => $component['extra']['multiple'],
+    '#description' => t('Check this option if the user should be allowed to choose multiple values.'),
+    '#parents' => array('extra', 'multiple'),
+  );
   $form['display']['aslist'] = array(
     '#type' => 'checkbox',
     '#title' => t('Listbox'),
@@ -313,11 +321,9 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
 
   // Build form element.
   $element = array(
-    '#type' => empty($component['extra']['aslist']) ? 'radios' : 'select',
     '#title' => $filter ? _webform_filter_xss($component['name']) : $component['name'],
     '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
     '#description' => isset($component['extra']['description']) ? $component['extra']['description'] : '',
-    '#default_value' => isset($value[0]) ? $value[0] : NULL,
     '#options' => $options,
     '#required' => $component['mandatory'],
     '#weight' => $component['weight'],
@@ -325,6 +331,26 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
     '#pre_render' => array(), // Needed to disable double-wrapping.
     '#translatable' => array('title', 'description'),
   );
+
+  // Set type of form component. See _webform_render_select().
+  if (empty($component['extra']['aslist'])) {
+    $element['#type'] = empty($component['extra']['multiple']) ? 'radios' : 'checkboxes';
+  }
+  else {
+    $element['#type'] = 'select';
+    if (!empty($component['extra']['multiple'])) {
+      $element['#size'] = 4;
+      $element['#multiple'] = TRUE;
+    }
+  }
+
+  // Set default value.
+  if (empty($component['extra']['multiple'])) {
+    $element['#default_value'] = isset($value[0]) ? $value[0] : NULL;
+  }
+  else {
+    $element['#default_value'] = isset($value) ? $value : array();
+  }
 
   return $element;
 }
