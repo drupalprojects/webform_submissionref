@@ -366,13 +366,16 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
  */
 function _webform_display_submissionref($component, $value, $format = 'html') {
   // Generate markup.
-  if (empty($value[0])) {
+  if (empty($value)) {
     $markup = '';
   }
   else {
-    $sid = $value[0];
     list($nid, $components, $filters, $options) = unserialize($component['value']);
-    $markup = l(t('Submission #@sid', array('@sid' => $sid)), "node/$nid/submission/$sid");
+    $markup = array();
+    foreach ($value as $sid) {
+      $markup[] = l(t('Submission #@sid', array('@sid' => $sid)), "node/$nid/submission/$sid");
+    }
+    $markup = implode($markup, ', ');
   }
 
   // Build form element.
@@ -404,12 +407,15 @@ function theme_webform_display_submissionref($variables) {
  * Displayed when viewing the results table i.e. node/1/webform-results/table.
  */
 function _webform_table_submissionref($component, $value) {
-  if (empty($value[0])) {
+  if (empty($value)) {
     return '';
   }
-  $sid = $value[0];
   list($nid, $components, $filters, $options) = unserialize($component['value']);
-  return l(t('Submission #@sid', array('@sid' => $sid)), "node/$nid/submission/$sid");
+  $markup = array();
+  foreach ($value as $sid) {
+    $markup[] = l(t('Submission #@sid', array('@sid' => $sid)), "node/$nid/submission/$sid");
+  }
+  return implode($markup, ', ');
 }
 
 /**
@@ -427,12 +433,15 @@ function _webform_csv_headers_submissionref($component, $export_options) {
  * Implements _webform_csv_data_component().
  */
 function _webform_csv_data_submissionref($component, $export_options, $value) {
-  if (empty($value[0])) {
+  if (empty($value)) {
     return '';
   }
-  $sid = $value[0];
   list($nid, $components, $filters, $options) = unserialize($component['value']);
-  return t('Submission #@sid', array('@sid' => $sid));
+  $markup = array();
+  foreach ($value as $sid) {
+    $markup[] = t('Submission #@sid', array('@sid' => $sid));
+  }
+  return implode($markup, ', ');
 }
 
 
