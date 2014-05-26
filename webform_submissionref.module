@@ -283,15 +283,19 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
       $submissions = array_slice($submissions, 0, $options_set['limit']);
     }
     else {
-      // On node/X/submission/X/edit, suggest only the original submissions.
+      // On node/X/submission/X/edit, suggest at least the original submissions.
       // This ensures that the default value will not be an illegal choice.
       $original_sids = array_filter($value);
+      $submissions_original = array();
       // Looping over $submissions will not scale well, but there is no other way to filter $submissions based on $original_sids.
       foreach ($submissions as $key => $submission) {
-        if (!in_array($submission->sid, $original_sids)) {
+        if (in_array($submission->sid, $original_sids)) {
+          $submissions_original[] = $submission;
           unset($submissions[$key]);
         }
       }
+      $submissions_new = array_slice($submissions, 0, $options_set['limit'] - count($submissions_original));
+      $submissions = array_merge($submissions_original, $submissions_new);
     }
   }
 
