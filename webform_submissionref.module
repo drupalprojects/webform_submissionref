@@ -287,18 +287,16 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
       $options[$submission->sid] = array();
       // 1. Radio/checkbox display: render option as HTML.
       if (empty($component['extra']['aslist'])) {
+        $renderable = webform_submission_render($webform, $submission, NULL, 'html');
         foreach ($components as $cid => $c) {
           // Make sure the component must be display and still exists.
           if ($c['display'] && isset($submission->data[$cid])) {
-            $markup = $submission->data[$cid][0];
+            $name = $webform->webform['components'][$cid]['form_key'];
+            $element = $renderable[$name];
+            $element['#title'] = '';
             // Define hook_webform_submissionref_component_alter().
-            drupal_alter('webform_submissionref_component', $markup, $submission, $cid);
-            $element = array(
-              '#markup' => $markup,
-              '#weight' => $c['weight'],
-              '#prefix' => '<div>',
-              '#suffix' => '</div>',
-            );
+            drupal_alter('webform_submissionref_component', $element, $webform, $submission, $cid);
+            $element['#weight'] = $c['weight'];
             $options[$submission->sid][$cid] = $element;
           }
         }
@@ -310,8 +308,8 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
         foreach ($components as $cid => $c) {
           // Make sure the component must be display and still exists.
           if ($c['display'] && isset($submission->data[$cid])) {
-            // Use space as an arbitraty glue. We can expose it to users in the future.
-            $option .= ' ' . $submission->data[$cid][0];
+            // Use space as an arbitraty glue. Using tokens might be more elegant but would require a different UI.
+            $option .= ' ' . implode($submission->data[$cid], ' ');
           }
         }
         $options[$submission->sid] = $option;
