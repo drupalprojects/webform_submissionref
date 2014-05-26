@@ -271,11 +271,13 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
 
   // Apply randomize option.
   if (isset($options_set['randomize'])) {
-    shuffle($submissions);
+    _webform_shuffle_options($submissions);
   }
 
   // Apply limit option.
-  if (isset($options_set['limit'])) {
+  // Do not limit options on POST to make sure form validation is checked against all submissions.
+  // This is to avoid 'Illegal Choice' warnings.
+  if (isset($options_set['limit']) && empty($_POST)) {
     if (empty($value)) {
       // On node/X, simply get the first submissions.
       $submissions = array_slice($submissions, 0, $options_set['limit']);
