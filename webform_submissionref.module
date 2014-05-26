@@ -269,12 +269,28 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
     }
   }
 
-  // Apply options.
+  // Apply randomize option.
   if (isset($options_set['randomize'])) {
     shuffle($submissions);
   }
+
+  // Apply limit option.
   if (isset($options_set['limit'])) {
-    $submissions = array_slice($submissions, 0, $options_set['limit']);
+    if (empty($value)) {
+      // On node/X, simply get the first submissions.
+      $submissions = array_slice($submissions, 0, $options_set['limit']);
+    }
+    else {
+      // On node/X/submission/X/edit, suggest only the original submissions.
+      // This ensures that the default value will not be an illegal choice.
+      $original_sids = array_filter($value);
+      // Looping over $submissions will not scale well, but there is no other way to filter $submissions based on $original_sids.
+      foreach ($submissions as $key => $submission) {
+        if (!in_array($submission->sid, $original_sids)) {
+          unset($submissions[$key]);
+        }
+      }
+    }
   }
 
   // Build options from submitted data.
