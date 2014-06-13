@@ -327,11 +327,13 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
       // 2. Listbox display: render option as raw, plain text.
       else {
         $option = '';
+        uasort($components, 'drupal_sort_weight');
         foreach ($components as $cid => $c) {
           // Make sure the component must be display and still exists.
           if ($c['display'] && isset($submission->data[$cid])) {
             // Use space as an arbitraty glue. Using tokens might be more elegant but would require a different UI.
-            $option .= ' ' . implode($submission->data[$cid], ' ');
+            $option .= empty($option) ? '' : ' ';
+            $option .= implode($submission->data[$cid], ' ');
           }
         }
         $options[$submission->sid] = $option;
