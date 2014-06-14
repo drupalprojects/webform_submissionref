@@ -56,8 +56,6 @@ class WebformSubmissionReferenceTestCase extends DrupalWebTestCase {
     $this->assertText($this->target->title);
   }
 
-// TODO loop with the 4 configurations (checkbox / listbox / etc). Use child classes ?
-
   /**
    * Component behavior when we have no target results.
    */
