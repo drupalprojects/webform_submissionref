@@ -395,7 +395,7 @@ function _webform_display_submissionref($component, $value, $format = 'html') {
   else {
     list($nid, $components, $filters, $options) = unserialize($component['value']);
     $markup = array();
-    foreach ($value as $sid) {
+    foreach (array_filter($value) as $sid) {
       $markup[] = l(t('Submission #@sid', array('@sid' => $sid)), "node/$nid/submission/$sid");
     }
     $markup = implode($markup, ', ');
@@ -435,7 +435,7 @@ function _webform_table_submissionref($component, $value) {
   }
   list($nid, $components, $filters, $options) = unserialize($component['value']);
   $markup = array();
-  foreach ($value as $sid) {
+  foreach (array_filter($value) as $sid) {
     $markup[] = l(t('Submission #@sid', array('@sid' => $sid)), "node/$nid/submission/$sid");
   }
   return implode($markup, ', ');
@@ -461,7 +461,7 @@ function _webform_csv_data_submissionref($component, $export_options, $value) {
   }
   list($nid, $components, $filters, $options) = unserialize($component['value']);
   $markup = array();
-  foreach ($value as $sid) {
+  foreach (array_filter($value) as $sid) {
     $markup[] = t('Submission #@sid', array('@sid' => $sid));
   }
   return implode($markup, ', ');
