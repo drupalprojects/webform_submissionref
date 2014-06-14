@@ -271,6 +271,7 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
 
   // Apply randomize option.
   if (isset($options_set['randomize'])) {
+    module_load_include('inc', 'webform', 'components/select');
     _webform_shuffle_options($submissions);
   }
 
