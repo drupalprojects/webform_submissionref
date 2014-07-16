@@ -197,9 +197,11 @@ EOT;
       $cid = $component['cid'];
       // If component belongs to default webform, then set its default values.
       if (($nid == $default_nid) && array_key_exists($cid, $default_components)) {
+        $default_label   = $default_components[$cid]['label'];
         $default_display = $default_components[$cid]['display'];
         $default_weight  = $default_components[$cid]['weight'];
       } else {
+        $default_label   = 'before';
         $default_display = FALSE;
         $default_weight  = 0;
       }
@@ -207,6 +209,14 @@ EOT;
         '#weight' => $default_weight,
         'name' => array(
           '#markup' => $component['name'],
+        ),
+        'label' => array(
+          '#type' => 'select',
+          '#options' => array(
+            'invisible' => t('Hidden'),
+            'before' => t('Visible'),
+          ),
+          '#default_value' => $default_label,
         ),
         'display' => array(
           '#type' => 'checkbox',
@@ -316,7 +326,7 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
           if ($c['display'] && isset($submission->data[$cid])) {
             $name = $webform->webform['components'][$cid]['form_key'];
             $element = $renderable[$name];
-            $element['#title'] = '';
+            $element['#title_display'] = $c['label'];
             // Define hook_webform_submissionref_component_alter().
             drupal_alter('webform_submissionref_component', $element, $webform, $submission, $cid);
             $element['#weight'] = $c['weight'];
@@ -558,7 +568,7 @@ function theme_webform_submissionref_components_table($variables) {
 
   $weight_class = 'submissionref-components-weight';
 
-  $header = array(t('Component'), t('Display'), t('Weight'));
+  $header = array(t('Component'), t('Label'), t('Display'), t('Weight'));
  
   $rows = array();
   foreach (element_children($element, TRUE) as $key) {
@@ -572,6 +582,7 @@ function theme_webform_submissionref_components_table($variables) {
     $rows[] = array(
       'data' => array(
         drupal_render($element[$key]['name']),
+        drupal_render($element[$key]['label']),
         drupal_render($element[$key]['display']),
         drupal_render($element[$key]['weight']),
       ),
