@@ -315,6 +315,14 @@ function _webform_render_submissionref($component, $value = NULL, $filter = TRUE
           // Make sure the component must be display and still exists.
           if ($c['display'] && isset($submission->data[$cid])) {
             $name = $webform->webform['components'][$cid]['form_key'];
+            // Wrap label in a span for easy theming.
+            $renderable[$name]['#title'] = theme('html_tag', array(
+              'element' => array(
+                '#tag' => 'span',
+                '#attributes' => array('class' => 'webform-submissionref-label'),
+                '#value' => $renderable[$name]['#title'] . ':',
+              ),
+            ));
             $element = $renderable[$name];
             // Define hook_webform_submissionref_component_alter().
             drupal_alter('webform_submissionref_component', $element, $webform, $submission, $cid);
