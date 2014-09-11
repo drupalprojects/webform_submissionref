@@ -42,11 +42,10 @@ function webform_submissionref_tokens($type, $tokens, array $data = array(), arr
             if ($component['type'] == 'submissionref') {
               // Get target submission.
               list($target_nid) = unserialize($component['value']);
-              $target_sid = $submission->data[$cid][0];
-              if (empty($target_sid)) {
+              $target_sids = $submission->data[$cid];
+              if (empty($target_sids)) {
                 break;
               }
-              $target_submission = webform_get_submission($target_nid, $target_sid);
               // Get target webform.
               // No need to check if the webform actually exists.
               // The component stores only valid webform nids.
@@ -56,11 +55,18 @@ function webform_submissionref_tokens($type, $tokens, array $data = array(), arr
               if (empty($target_cid)) {
                 break;
               }
+              // Render target values.
+              $target_renderables = array();
+              foreach ($target_sids as $target_sid) {
+                $target_submission = webform_get_submission($target_nid, $target_sid);
+                $target_renderable = webform_submission_render($target_webform, $target_submission, $email, $format);
+                $target_renderable = $target_renderable[$name];
+                $target_renderable['#access'] = TRUE;
+                $target_renderable['#theme_wrappers'] = array();
+                $target_renderables[] = $target_renderable;
+              }
               // Replace token by value of referenced submission/component.
-              $target_renderable = webform_submission_render($target_webform, $target_submission, $email, $format);
-              $target_renderable[$name]['#access'] = TRUE;
-              $target_renderable[$name]['#theme_wrappers'] = array();
-              $replacements[$original] = render($target_renderable[$name]);
+              $replacements[$original] = render($target_renderables);
             }
           }
         }
