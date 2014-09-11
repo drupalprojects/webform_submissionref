@@ -63,10 +63,10 @@ function webform_submissionref_tokens($type, $tokens, array $data = array(), arr
                 $target_renderable = $target_renderable[$name];
                 $target_renderable['#access'] = TRUE;
                 $target_renderable['#theme_wrappers'] = array();
-                $target_renderables[] = $target_renderable;
+                $target_renderables[] = render($target_renderable);
               }
               // Replace token by value of referenced submission/component.
-              $replacements[$original] = render($target_renderables);
+              $replacements[$original] = implode($target_renderables, ', ');
             }
           }
         }
